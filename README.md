@@ -1,6 +1,6 @@
 # DataWink
 
-This repository contains the source code for [*DataWink: DataWink: Reusing and Adapting SVG-based Visualizations with LMMs*](https://shellywhen.github.io/projects/DataWink) (IEEE VIS 2025).
+This repository contains the source code for [*DataWink: Reusing and Adapting SVG-based Visualizations with LMMs*](https://shellywhen.github.io/projects/DataWink) (IEEE VIS 2025).
 
 ![Teaser of DataWink: DataWink: Reusing and Adapting SVG-based Visualizations with LMMs (IEEE VIS 2025)](https://shellywhen.github.io/projects/DataWink/teaser.png)
 
@@ -19,7 +19,7 @@ Then you should be seeing the deployed website (default at https://localhost:517
 ## How to Use
 1. Configure your OpenAI API in the frontend.
 2. Import your SVG example or try with examples.
-3. Wait for LMM parsing (up to 10 minutes due to unoptimized long chain) and enjoy your extensible template.
+3. Wait for LMM parsing (up to 10 minutes due to an unoptimized long chain) and enjoy your extensible template.
 
 
 ## Citation
