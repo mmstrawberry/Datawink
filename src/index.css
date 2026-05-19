@@ -1,0 +1,229 @@
+:root {
+    --main-color: #7a1cac;
+    --bg-color: #f9f9f9;
+    --strong-color: #9a14e2;
+    --light-main-color: #e6b8ff;
+ }
+
+body {
+    margin: 0;
+    overflow-x: hidden;    
+}
+
+aside {
+    height: 100vh;
+}
+
+a {
+    color: #000000 !important;
+}
+
+.ant-layout-sider-light {
+    background-color: #f9f9f9;
+}
+
+.ant-layout main {
+    margin: 0;
+    padding: 0;
+}
+
+.ant-layout-sider-trigger {
+    background: #fdfdfd !important;
+}
+
+.ant-card-body {
+    padding: 8px !important;
+}
+
+.ant-card-meta-detail >div:not(:last-child) {
+    margin-bottom: 0 !important;
+}
+
+.ant-card-meta-title {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #515151 !important;
+}
+
+.ant-card-meta-title > .anticon {
+    color: #757474 !important;
+}
+
+.ant-spin-fullscreen {
+   background-color: #000000e2 !important;
+}
+.ant-card-head {
+    min-height: 30px !important;
+}
+
+.ant-card-small {
+    border-color: #b440ff;
+    border-width: 0.5px;
+}
+
+.ant-input-number {
+    cursor: ew-resize;
+}
+
+.ant-input-number-input-wrap {
+    cursor: ew-resize;
+}
+
+.ant-tabs-content {
+    height: 100%;
+}
+.ant-tabs-tabpane {
+    height: 100%;
+}
+div[role='seperator'] {
+  border: 0.5px solid rgb(234, 234, 234) !important;
+}
+
+.code-panel .ant-splitter-bar {
+  background: rgb(240, 240, 240);
+}
+
+.code-panel-divider-btn .ant-btn {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.rxv-container {
+    font-family: "Roboto Mono" !important;
+    overflow-wrap: null;
+    white-space: normal;
+}
+
+.Spreadsheet__cell, .Spreadsheet__header {
+    min-width: 3em !important;
+    width: 3dem !important;
+    max-height: 1em !important;
+    height: 1em !important;
+}
+
+.editable-cell-value-wrap {
+    padding: 5px 12px;
+    cursor: pointer;
+}
+
+.regenerate-button {
+    border: 1px dashed #eee !important;
+    border-radius: 4px !important;
+    padding: 0 8px !important;
+}
+
+.rg-pane rg-pane-top .rg-cell {
+    background-color: #eaeaea;
+    text-align: center;
+    font-weight: 500;
+}
+
+.rg-pane-top .rg-text-cell {
+    background-color: rgb(250, 250, 250);
+    text-align: center !important;
+    font-weight: 500;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+svg {
+    pointer-events: none;
+}
+
+.reactgrid {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    text-align: center;
+}
+
+.tree-tag {
+    font-size: 8px;
+    font-family: "Roboto Mono";
+}
+
+.tree-id {
+    color: #686868;
+    font-size: smaller;
+}
+
+.tree-class {
+    color: #8c8c8c;
+    font-size: smaller;
+}
+.tree-vis-slot {
+    color: #1b3ccf;
+    font-size: smaller;
+}
+.tree-vis-layer {
+    color: var(--main-color);
+    font-size: smaller;
+}
+
+.tree-text {
+    color: #2c6a10;
+    font-size: xx-small;
+    font-style: italic;
+}
+
+
+
+.template-element-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #0c0c0c;
+    padding: 0 4px;
+    border-radius: 4px;
+  }
+
+.template-element-identifier {
+    font-size: 15px;
+    font-weight: 400;
+    color: #3f3f3f;
+}
+
+.template-element-attr {
+    font-size: 13px;
+    font-weight: 400;
+    font-family: 'Roboto Mono', monospace;
+    color: #3e3e3e;   
+    background-color: #f4f4f4;
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
+.template-element-attr-encoded {
+    font-size: 13px;
+    font-weight: 400;
+    font-family: 'Roboto Mono', monospace;
+    color: #3e3e3e;   
+    background-color: #feeefc;
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
+.chat-message > p:first-of-type {
+    margin: 0 !important;
+}
+  
+
+.chat-message > p {
+    margin-bottom: 0 !important;
+}
+
+.inchat  .ant-card-small{
+    border: gray 1px dashed !important;
+    border-style: dashed;
+}
+
+.inchat .ant-card-head {
+    font-weight: 400;
+}
+
+
+.inchat {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+}
+

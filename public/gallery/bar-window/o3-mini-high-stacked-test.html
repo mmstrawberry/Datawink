@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>D3 Clipped Bar Visualization</title>
+    <!-- Load d3 (version 7 used here) -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body { margin: 0; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Dimensions and positioning (most values mimic the original layout)
+      const width = 700,
+            height = 700,
+            baseline = 245,    // all bars end at y=245
+            startX = 124,      // first bar’s x translation
+            spacing = 75.48,   // gap between bars (so each bar’s x = 124+i*spacing)
+            barWidth = 70.4;
+      
+      // Generate six “random” data values as multiples of 40 in the range [0,280]
+      const data = d3.range(6).map(() => 40 * Math.floor(Math.random() * 8));
+      // For example, if a value is 160 then the label (160/40) is “4”.
+      
+      // Create the main SVG container and set the font-family to match the design.
+      const svg = d3.select("body")
+        .append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .style("font-family", "Roboto Mono Bold");
+      
+      // Add <defs> and inside it a linear gradient definition and a clipPath.
+      const defs = svg.append("defs");
+      
+      // Linear gradient for use in our overlay “polygons”
+      const grad = defs.append("linearGradient")
+          .attr("id", "barGradient")
+          .attr("x1", "0%")
+          .attr("y1", "100%")
+          .attr("x2", "0%")
+          .attr("y2", "0%");
+      
+      grad.selectAll("stop")
+         .data([
+           { offset: "0%", color: "#ee378c", opacity: 0 },
+           { offset: "100%", color: "#ee378c", opacity: 1 }
+         ])
+         .enter()
+         .append("stop")
+           .attr("offset", d => d.offset)
+           .attr("stop-color", d => d.color)
+           .attr("stop-opacity", d => d.opacity);
+      
+      // Create a clipPath that will “cut out” the bar areas from an overlay image.
+      const clip = defs.append("clipPath")
+          .attr("id", "clip");
+      
+      // For each bar add a rect – the top is (baseline – data value) and height equals the data value.
+      clip.selectAll("rect")
+         .data(data)
+         .enter()
+         .append("rect")
+           .attr("x", (d, i) => startX + i * spacing)
+           .attr("y", d => baseline - d)
+           .attr("width", barWidth)
+           .attr("height", d => d)
+           .attr("fill", "#24DBE1");
+      
+      // Also for each bar add a polygon (a decorative “overlay”) whose shape comes from the data.
+      // Notice how the extra x-offset is set to 0.75*d and the “polygon height” is 0.8*d.
+      clip.selectAll("polygon")
+         .data(data)
+         .enter()
+         .append("polygon")
+           .attr("points", d => {
+             const offset = 0.75 * d,
+                   polyHeight = 0.8 * d;
+             // The points are defined so that the top edge is (0,0)-(barWidth,0)
+             // and then the bottom edge extends to the right by the offset.
+             return `0,0 ${barWidth},0 ${barWidth + offset},${polyHeight} ${offset},${polyHeight}`;
+           })
+           // Place each polygon at its proper x position and a fixed y translation (baseline + 13)
+           .attr("transform", (d, i) => "translate(" + (startX + i * spacing) + "," + (baseline + 13) + ")")
+           .attr("fill", "url(#barGradient)")
+           .attr("opacity", 0.8);
+      
+      // Add the background image (the “room with a window” image) as the base layer.
+      svg.append("image")
+         .attr("xlink:href", "https://plotparade.com/55_window/img/ia2.jpg")
+         .attr("width", width)
+         .attr("height", height)
+         .attr("x", 0)
+         .attr("y", 0);
+      
+      // Now add the second image. It will be clipped by the clipPath we defined.
+      svg.append("image")
+         .attr("clip-path", "url(#clip)")
+         .attr("xlink:href", "https://plotparade.com/55_window/img/ia1.jpg")
+         .attr("width", width)
+         .attr("height", height)
+         .attr("x", 0)
+         .attr("y", 0);
+      
+      // Create a group for additional chart elements (such as vertical lines and data labels)
+      const chartGroup = svg.append("g")
+          .attr("transform", "translate(0,150)");
+      
+      // Add a vertical line for each bar. (The first line is hidden as in the original.)
+      chartGroup.selectAll("line")
+          .data(data)
+          .enter()
+          .append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", 282)
+            .attr("stroke", "#040723")
+            .attr("stroke-width", 4.6)
+            .attr("opacity", 1)
+            // position each line slightly to the left of its bar (here a fixed –2.3 offset is used)
+            .attr("transform", (d, i) => "translate(" + (startX + i * spacing - 2.3) + ",-40)")
+            .style("display", (d, i) => i === 0 ? "none" : "block");
+      
+      // Add text labels above each bar that display the digit (computed as data/40)
+      chartGroup.selectAll("text.barLabel")
+          .data(data)
+          .enter()
+          .append("text")
+            .attr("class", "barLabel")
+            .attr("x", (d, i) => startX + i * spacing + barWidth/2)
+            .attr("y", d => (baseline - d) - 10)
+            .attr("font-size", "16px")
+            .attr("fill", "#24DBE1")
+            .attr("text-anchor", "middle")
+            .text(d => d/40);
+      
+      // Place the start and end year labels (as in the original)
+      svg.append("text")
+         .attr("x", 104)
+         .attr("y", 260)
+         .attr("font-size", "14px")
+         .attr("fill", "#F153F0")
+         .attr("text-anchor", "end")
+         .attr("transform", "translate(10,-14)")
+         .text("2015");
+      
+      svg.append("text")
+         .attr("x", 580.4)
+         .attr("y", 260)
+         .attr("font-size", "14px")
+         .attr("fill", "#F153F0")
+         .attr("text-anchor", "start")
+         .attr("transform", "translate(10,-14)")
+         .text("2020");
+      
+      // Add the chart title and subtitle.
+      svg.append("text")
+         .attr("x", 160)
+         .attr("y", 40)
+         .attr("font-size", "14px")
+         .attr("fill", "#24DBE1")
+         .attr("opacity", 0.7)
+         .attr("text-anchor", "start")
+         .text("Untitled chart");
+      
+      svg.append("text")
+         .attr("x", 160)
+         .attr("y", 60)
+         .attr("font-size", "12px")
+         .attr("fill", "#24DBE1")
+         .attr("opacity", 0.7)
+         .attr("text-anchor", "start")
+         .text("(subtitle)");
+      
+      // Add the data source credit at the bottom.
+      svg.append("text")
+         .attr("x", 40)
+         .attr("y", 674)
+         .attr("font-size", "12px")
+         .attr("fill", "#24DBE1")
+         .attr("opacity", 0.7)
+         .attr("text-anchor", "start")
+         .text("source: credit your data source");
+      
+      // Finally, add a “logo” group on the bottom right.
+      // (This uses the same static path data as in your provided svg.)
+      const logo = svg.append("g")
+          .attr("id", "logo")
+          .attr("transform", "translate(450,655) scale(0.9)")
+          .attr("fill", "#24DBE1");
+      
+      logo.html(`
+        <path d="M15.2,20.3c0.2,0,0.4,0,0.5-0.1c0.2-0.1,0.3-0.1,0.4-0.2s0.2-0.2,0.3-0.4c0.1-0.1,0.1-0.3,0.1-0.4h0.9 
+                c0,0.3-0.1,0.5-0.2,0.7c-0.1,0.2-0.3,0.4-0.5,0.6c-0.2,0.2-0.5,0.3-0.7,0.4c-0.3,0.1-0.6,0.2-0.9,0.2
+                c-0.4,0-0.8-0.1-1.1-0.2c-0.3-0.2-0.6-0.4-0.8-0.6c-0.2-0.3-0.4-0.6-0.5-0.9c-0.1-0.3-0.2-0.7-0.2-1.1V18
+                c0-0.4,0.1-0.7,0.2-1.1c0.1-0.3,0.3-0.7,0.5-0.9c0.2-0.3,0.5-0.5,0.8-0.6c0.3-0.2,0.7-0.2,1.1-0.2
+                c0.3,0,0.7,0.1,0.9,0.2c0.3,0.1,0.5,0.3,0.7,0.4c0.2,0.2,0.4,0.4,0.5,0.7s0.2,0.5,0.2,0.8h-0.9
+                c0-0.2,0-0.3-0.1-0.5c-0.1-0.2-0.2-0.3-0.3-0.4c-0.1-0.1-0.3-0.2-0.4-0.3C15.5,16,15.4,16,15.2,16
+                c-0.3,0-0.6,0.1-0.8,0.2c-0.2,0.1-0.4,0.3-0.5,0.5c-0.1,0.2-0.2,0.4-0.3,0.7c-0.1,0.2-0.1,0.5-0.1,0.7v0.2
+                c0,0.3,0,0.5,0.1,0.7c0.1,0.2,0.1,0.5,0.3,0.7c0.1,0.2,0.3,0.4,0.5,0.5C14.6,20.3,14.9,20.3,15.2,20.3z"></path>
+        <path d="M24.6,15.2c0.1,0,0.2,0,0.3,0c0.1,0,0.2,0,0.3,0c0.1,0,0.2,0,0.2,0c0.1,0,0.1,0,0.2,0.1l-0.1,1
+                c-0.2,0-0.4-0.1-0.5-0.1c-0.2,0-0.4,0-0.5,0c-0.5,0-0.8,0.1-1.1,0.3c-0.3,0.2-0.5,0.5-0.6,0.9V21h-1v-5.8h0.9l0,0.9
+                c0.2-0.3,0.5-0.6,0.8-0.7C23.8,15.2,24.2,15.2,24.6,15.2z"></path>
+        <!-- More logo paths could be added here -->
+      `);
+    </script>
+  </body>
+</html>

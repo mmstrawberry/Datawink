@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bar Window Chart</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: #0d0d2b; /* fallback background */
+      font-family: sans-serif;
+    }
+    .chart-title {
+      fill: #fff;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .chart-subtitle {
+      fill: #fff;
+      font-size: 16px;
+    }
+    .source-text {
+      fill: #fff;
+      font-size: 12px;
+    }
+    .bar {
+      stroke: none;
+    }
+    .bar-value {
+      fill: #fff;
+      font-size: 12px;
+      text-anchor: middle;
+    }
+    .axis-text {
+      fill: #fff;
+      font-size: 12px;
+      text-anchor: middle;
+    }
+  </style>
+</head>
+<body>
+
+<script>
+  // --------------------------------------------------
+  // 1) Set up overall SVG dimensions
+  // --------------------------------------------------
+  const width = 800;
+  const height = 600;
+
+  const svg = d3.select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // --------------------------------------------------
+  // 2) Example data for bars (replace with your own)
+  // --------------------------------------------------
+  const data = [
+    { year: 2015, value: 6 },
+    { year: 2016, value: 7 },
+    { year: 2017, value: 8 },
+    { year: 2018, value: 9 },
+    { year: 2019, value: 10 }
+  ];
+
+  // --------------------------------------------------
+  // 3) Define <defs> for gradients, etc.
+  // --------------------------------------------------
+  const defs = svg.append("defs");
+
+  // Gradient for the "window" background
+  const windowGradient = defs.append("linearGradient")
+    .attr("id", "windowGradient")
+    .attr("x1", "0%").attr("y1", "100%")
+    .attr("x2", "0%").attr("y2", "0%");
+  windowGradient.append("stop")
+    .attr("offset", "0%")
+    .attr("stop-color", "#ff79c6"); 
+  windowGradient.append("stop")
+    .attr("offset", "100%")
+    .attr("stop-color", "#8c1eff");
+
+  // --------------------------------------------------
+  // 4) Place a background image for the room scene
+  //    Replace the base64 data with your actual image,
+  //    or reference a file with .attr("href", "room.png")
+  // --------------------------------------------------
+  const roomImage = svg.append("image")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    // Placeholder base64 (just a tiny pinkish gradient)
+    // REPLACE this with your real asset or a local file reference
+    .attr("href", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQYV2Nk+M9QDwAE8QH+GG4QxwAAAABJRU5ErkJggg==");
+
+  // --------------------------------------------------
+  // 5) Draw a group for the entire "window" + chart
+  //    We can layer it over the background
+  // --------------------------------------------------
+  const sceneGroup = svg.append("g")
+    .attr("id", "scene");
+
+  // Dimensions for the window area
+  const windowX = 200;
+  const windowY = 100;
+  const windowW = 400;
+  const windowH = 300;
+
+  // "Window" rectangle (with gradient)
+  sceneGroup.append("rect")
+    .attr("x", windowX)
+    .attr("y", windowY)
+    .attr("width", windowW)
+    .attr("height", windowH)
+    .attr("fill", "url(#windowGradient)")
+    .attr("opacity", 0.8);
+
+  // --------------------------------------------------
+  // 6) Add a skyline silhouette behind the bars
+  //    (Placeholder path – replace with your own)
+  // --------------------------------------------------
+  sceneGroup.append("path")
+    .attr("d", "M210,380 L220,280 L240,320 L260,260 L280,320 L300,290 L320,340 L340,270 L360,320 L380,290 L400,380 Z")
+    .attr("fill", "#1c1c2b")
+    .attr("opacity", 0.4);
+
+  // --------------------------------------------------
+  // 7) Add the cat silhouette on the windowsill
+  //    (Placeholder path – replace with your actual path)
+  // --------------------------------------------------
+  sceneGroup.append("path")
+    .attr("d", "M350,380 C355,370 365,370 370,380 C370,390 365,400 355,400 C345,400 340,390 350,380 Z")
+    .attr("fill", "#000");
+
+  // --------------------------------------------------
+  // 8) Create a group for the bar chart so it
+  //    aligns with the window area
+  // --------------------------------------------------
+  const chartGroup = sceneGroup.append("g")
+    .attr("id", "chart")
+    .attr("transform", `translate(${windowX}, ${windowY})`);
+
+  // Inner margins for the chart
+  const chartMargin = { top: 20, right: 20, bottom: 20, left: 20 };
+  const chartWidth = windowW - chartMargin.left - chartMargin.right;
+  const chartHeight = windowH - chartMargin.top - chartMargin.bottom;
+
+  // --------------------------------------------------
+  // 9) Set up scales
+  // --------------------------------------------------
+  const x = d3.scaleBand()
+    .domain(data.map(d => d.year))
+    .range([0, chartWidth])
+    .padding(0.2);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.value)])
+    .nice()
+    .range([chartHeight, 0]);
+
+  // --------------------------------------------------
+  // 10) Draw bars
+  // --------------------------------------------------
+  chartGroup.selectAll(".bar")
+    .data(data)
+    .join("rect")
+    .attr("class", "bar")
+    .attr("x", d => chartMargin.left + x(d.year))
+    .attr("y", d => chartMargin.top + y(d.value))
+    .attr("width", x.bandwidth())
+    .attr("height", d => chartHeight - y(d.value))
+    .attr("fill", "#1c1c2b")
+    .attr("opacity", 0.8);
+
+  // --------------------------------------------------
+  // 11) Add bar value labels
+  // --------------------------------------------------
+  chartGroup.selectAll(".bar-value")
+    .data(data)
+    .join("text")
+    .attr("class", "bar-value")
+    .attr("x", d => chartMargin.left + x(d.year) + x.bandwidth() / 2)
+    .attr("y", d => chartMargin.top + y(d.value) - 5)
+    .text(d => d.value);
+
+  // --------------------------------------------------
+  // 12) Simple year labels (instead of axes)
+  // --------------------------------------------------
+  chartGroup.selectAll(".axis-text")
+    .data(data)
+    .join("text")
+    .attr("class", "axis-text")
+    .attr("x", d => chartMargin.left + x(d.year) + x.bandwidth() / 2)
+    .attr("y", chartMargin.top + chartHeight + 15)
+    .text(d => d.year);
+
+  // --------------------------------------------------
+  // 13) Chart Title, Subtitle, and Source
+  // --------------------------------------------------
+  svg.append("text")
+    .attr("class", "chart-title")
+    .attr("x", 30)
+    .attr("y", 50)
+    .text("Untitled chart");
+
+  svg.append("text")
+    .attr("class", "chart-subtitle")
+    .attr("x", 30)
+    .attr("y", 75)
+    .text("(subtitle)");
+
+  svg.append("text")
+    .attr("class", "source-text")
+    .attr("x", 30)
+    .attr("y", height - 30)
+    .text("source: credit your data source");
+
+  svg.append("text")
+    .attr("class", "source-text")
+    .attr("x", width - 180)
+    .attr("y", height - 30)
+    .text("created with P.l.t Parade");
+
+</script>
+</body>
+</html>

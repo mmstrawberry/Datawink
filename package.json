@@ -1,0 +1,53 @@
+{
+  "name": "datawink",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@silevis/reactgrid": "^4.1.15",
+    "@types/d3": "^7.4.3",
+    "antd": "^5.24.2",
+    "autoprefixer": "^10.4.20",
+    "axios": "^1.8.2",
+    "color": "^5.0.0",
+    "d3": "^7.9.0",
+    "mobx": "^6.13.6",
+    "mobx-persist-store": "^1.1.5",
+    "mobx-react": "^9.2.0",
+    "monaco-editor": "^0.52.2",
+    "openai": "^4.85.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-draggable": "^4.4.6",
+    "react-editable-json-tree": "^2.3.0",
+    "react-markdown": "^10.1.0",
+    "react-resizable-panels": "^2.1.7",
+    "react-spreadsheet": "^0.9.5",
+    "react-xml-viewer": "^2.0.5",
+    "scheduler": "^0.25.0",
+    "vite-plugin-checker": "^0.9.1",
+    "vite-plugin-monaco-editor": "^1.1.0",
+    "xml-beautifier": "^0.5.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.25.9",
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}
