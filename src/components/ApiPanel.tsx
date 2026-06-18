@@ -32,7 +32,7 @@ const ApiPanel = () => {
         }
         const openai = new OpenAI({
             apiKey: apiKey,
-            baseURL: "https://api.xiaomimimo.com/v1",
+            baseURL: "https://token-plan-cn.xiaomimimo.com/v1",
             dangerouslyAllowBrowser: true
         })
         openai.chat.completions.create({
