@@ -1,24 +1,25 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 
-
-
-const model = "gpt-5.4-nano" // "gpt-4o-mini";
+// MiMo V2.5 Pro 配置
+const model = "mimo-v2.5-pro"
+const baseURL = "https://api.xiaomimimo.com/v1"
 
 // use openai api to get the chat completion
-const getChatCompletion = (messages: ChatCompletionMessageParam[], 
-    key: string, 
+const getChatCompletion = (messages: ChatCompletionMessageParam[],
+    key: string,
     responseFormat: OpenAI.ResponseFormatJSONSchema,
     temperature: number = 0.5,
 ) => {
     const openai = new OpenAI({
         apiKey: key,
+        baseURL,
         dangerouslyAllowBrowser: true
     });
-    console.log('send request to openai')
+    console.log('send request to MiMo V2.5 Pro')
     const completion = openai.chat.completions.create({
         model,
-        messages, 
+        messages,
         response_format: responseFormat,
         temperature,
         stream: false

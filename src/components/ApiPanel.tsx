@@ -26,15 +26,17 @@ const ApiPanel = () => {
     }
 
     const checkApiKey = (apiKey: string) => {
-        if (apiKey.length < 150) {
+        if (apiKey.length < 10) {
             openErrorNotification("API Key is not valid.");
+            return;
         }
         const openai = new OpenAI({
             apiKey: apiKey,
+            baseURL: "https://api.xiaomimimo.com/v1",
             dangerouslyAllowBrowser: true
         })
         openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "mimo-v2.5-pro",
             messages: [{role: "user", content: "Hello, world!"}]
         }).then((response) => {
             try {
@@ -56,11 +58,11 @@ const ApiPanel = () => {
     {contextHolder}
          <Space direction="vertical" size="middle" style={{ width: '100%', flex: 1 }}>
             { isConfig && <Space.Compact style={{ width: '100%' }}>
-                    <Input addonBefore={<KeyOutlined />} 
-                    placeholder="OpenAI API Token"
+                    <Input addonBefore={<KeyOutlined />}
+                    placeholder="MiMo API Key (from platform.xiaomimimo.com)"
                     allowClear
                     style={{ width: '100%' }}
-                    minLength={100}
+                    minLength={10}
                     onChange={(e) => setLocalKey(e.target.value)}
                     />
                     <Button type="default" onClick={() => {
