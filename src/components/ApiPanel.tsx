@@ -27,7 +27,7 @@ const ApiPanel = () => {
 
     const checkApiKey = (apiKey: string) => {
         if (apiKey.length < 10) {
-            openErrorNotification("API Key is not valid.");
+            openErrorNotification("API Key 长度不足，请检查。");
             return;
         }
         const openai = new OpenAI({
@@ -36,21 +36,23 @@ const ApiPanel = () => {
             dangerouslyAllowBrowser: true
         })
         openai.chat.completions.create({
-            model: "mimo-v2.5-pro",
-            messages: [{role: "user", content: "Hello, world!"}]
+            model: "mimo-v2.5",
+            messages: [{role: "user", content: "Hello"}],
+            max_tokens: 10
         }).then((response) => {
             try {
                 if (response.choices[0].message.content) {
-                    openSuccessNotification("API Key is valid.");
+                    openSuccessNotification("API Key 验证成功！");
                     store.updateApiKey(apiKey);
                     setIsConfig(false);
                     return true;
                 }
             } catch (error) {
-                openErrorNotification(`API Key is not valid. ${error}`);
+                openErrorNotification(`验证失败: ${error}`);
             }
         }).catch((error) => {
-            openErrorNotification(`API Key is not valid. ${error}`);
+            const msg = error?.message || error?.error?.message || String(error);
+            openErrorNotification(`API 验证失败: ${msg}`);
         })
     }
 

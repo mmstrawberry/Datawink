@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 
-// MiMo V2.5 Pro 配置
-const model = "mimo-v2.5-pro"
+// MiMo V2.5 配置（mimo-v2.5 支持视觉，mimo-v2.5-pro 不支持）
+const model = "mimo-v2.5"
 const baseURL = "https://api.xiaomimimo.com/v1"
 
 // use openai api to get the chat completion
