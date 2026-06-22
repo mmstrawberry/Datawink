@@ -1,7 +1,4 @@
-import OpenAI from "openai"
-import { zodResponseFormat } from "openai/helpers/zod.mjs"
-import { z } from "zod"
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs"
+import { AnthropicMessageParam } from "./index"
 
 const SCHEMA_SYSTEM_PROMPT = `You are a helpful assistant that well understands data visualization, visualization grammar, and SVG specifications.`
 
@@ -18,88 +15,79 @@ ${svg}
 
 Here is the dataset:
 ${dataset}
-`
-    return [{
-        role: "system",
-        content: SCHEMA_SYSTEM_PROMPT
+
+In your response, please return ONLY a valid JSON object with the following structure:
+{
+    "global": {
+        "svgWidth": number,
+        "svgHeight": number,
+        "svgViewBox": "string",
+        "chartWidth": number,
+        "chartHeight": number,
+        "chartOriginX": "string",
+        "chartOriginY": "string",
+        "coordinateType": "cartesian" | "polar" | "others",
+        "chartType": "bar" | "line" | "scatter" | "others"
     },
-    {
-        role: "user",  
-        content: [{
-            type: "text",
-            text: prompt,
-        },
+    "axis": {
+        "xAxisDataAttr": "string (optional)",
+        "yAxisDataAttr": "string (optional)",
+        "radiusAxisDataAttr": "string (optional)",
+        "howToLabel": "string (optional)",
+        "howToEncode": "string (optional)"
+    },
+    "dataElementTypes": [
         {
-            type: "image_url",
-            image_url: {
-                url: img,
-            },
-        }]
-    }] as ChatCompletionMessageParam[]
+            "tagName": "string",
+            "identifier": "string",
+            "encodedEleAttrs": [
+                {
+                    "eleAttr": "string",
+                    "dataAttr": "string",
+                    "eleAttrRange": ["string or number"],
+                    "howToEncode": "string"
+                }
+            ],
+            "fixedAttr": [{"attribute": "string", "value": "string or number"}],
+            "encodedDataAttr": ["string"],
+            "howToEncode": "string",
+            "oneExampleElement": "string"
+        }
+    ],
+    "legend": {
+        "mappings": [{"dataAttr": "string", "valueRange": ["string"], "howToEncode": "string"}],
+        "locationInSVG": "string"
+    },
+    "annotation": {
+        "dataAttrs": ["string"],
+        "howToEncode": "string"
+    }
 }
 
-const schemaFormat = zodResponseFormat(z.object({
-    global: z.object({
-        svgWidth: z.number(),
-        svgHeight: z.number(),
-        svgViewBox: z.string(),
-        chartWidth: z.number().describe("the width of the chart region within the canvas"),
-        chartHeight: z.number().describe("the height of the chart region within the canvas"),
-        chartOriginX: z.string().describe("the x coordinate of the origin of the chart within the canvas"),
-        chartOriginY: z.string().describe("the y coordinate of the origin of the chart within the canvas"),
-        // z.enum becomes a JSON Schema "enum" for structured outputs; .refine() on z.string() is not
-        // reliably exported to the API schema, so models often returned free-form strings with "(...)".
-        coordinateType: z
-            .enum(["cartesian", "polar", "others"])
-            .describe("Exactly one of: cartesian | polar | others. No parenthetical text."),
-        chartType: z
-            .enum(["bar", "line", "scatter", "others"])
-            .describe("Exactly one of: bar | line | scatter | others. No parenthetical text."),
-    }),
-    axis: z.object({
-        xAxisDataAttr: z.string().optional(),
-        yAxisDataAttr: z.string().optional(),
-        radiusAxisDataAttr: z.string().optional(),
-        howToLabel: z.string().optional().describe("A description of how the axis is labeled in the SVG"),
-        howToEncode: z.string().optional().describe("A description of the axis domain, range, and scale type in the SVG"),
-    }),
-    dataElementTypes: z.array(z.object({
-        tagName: z.string().describe("the tag name of the data-driven element"),
-        identifier: z.string().describe("the pure CSS querySelector identifier of the data-driven element group, such as the class name of the element or shared properties"),
-        encodedEleAttrs: z.array(z.object({
-            eleAttr: z.string().describe("the attribute of the element"),
-            dataAttr: z.string().describe("the data attribute that is encoded in the element attribute"),
-            eleAttrRange: z.array(z.union([z.string(), z.number()])).describe("the range of the element attribute"),
-            howToEncode: z.string().describe("A description of how the data is encoded in the SVG, especially for the layout and relative position to its parent element"),
-        })),
-        fixedAttr: z.array(z.object({
-            attribute: z.string(),
-            value: z.union([z.string(), z.number()]),
-        })).describe("the element attributes that are fixed and do not encode the data"),
-        encodedDataAttr: z.array(z.string()).describe("the data attributes that are mapped to the encodedSvgAttr"),
-        howToEncode: z.string().describe("A description of how the data is encoded in the SVG"),
-        oneExampleElement: z.string().describe("one example element from the SVG that is of this type"),
-    })),
-    legend: z.object({
-        mappings: z.array(z.object({
-            dataAttr: z.string(),
-            valueRange: z.array(z.string()),
-            howToEncode: z.string(),
-        })).describe("the mappings of the data attributes to the value range and the description of how to encode the legend"),
-        locationInSVG: z.string().describe("the location of the legend in the SVG"),
-    }),
-    annotation: z.object({
-        dataAttrs: z.array(z.string()),
-        howToEncode: z.string(),
-    }),
-}), "schema-format") as unknown as OpenAI.ResponseFormatJSONSchema
+IMPORTANT: Return ONLY the JSON object, no markdown, no explanation, no code blocks.`
 
+    const base64 = img.replace(/^data:image\/\w+;base64,/, "");
+    return [{
+        role: "user" as const,
+        content: [{
+            type: "text" as const,
+            text: SCHEMA_SYSTEM_PROMPT + "\n\n" + prompt,
+        },
+        {
+            type: "image" as const,
+            source: {
+                type: "base64" as const,
+                media_type: "image/png" as const,
+                data: base64,
+            },
+        }]
+    }] as AnthropicMessageParam[]
+}
 
-
+const schemaFormat = undefined;
 
 export {
     getSchemaPrompt,
     SCHEMA_SYSTEM_PROMPT,
     schemaFormat
 }
-

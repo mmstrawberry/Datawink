@@ -1,7 +1,5 @@
-import OpenAI from "openai"
-import { zodResponseFormat } from "openai/helpers/zod.mjs"
-import { z } from "zod"
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs"
+import { AnthropicMessageParam } from "./index"
+
 const DATA_SYSTEM_PROMPT = `You are a helpful assistant that well understands data visualization, visualization grammar, and SVG specifications.`
 
 const getDataTablePrompt = (svg: string, img: string) => {
@@ -10,40 +8,41 @@ const getDataTablePrompt = (svg: string, img: string) => {
 Here is the SVG string:
 ${svg}
 
-In you response, you should return an array of objects, each object is a data point.
-For instance, [{
-    "dim1": "val1",
-    "dim2": "val2",
-    "dim3": "val3"
-}, {
-    "dim1": "val1",
-    "dim2": "val2",
-    "dim3": "val3" 
-}]
-`
+In your response, please return ONLY a valid JSON object with the following structure:
+{
+    "jsonifiedDatumArray": ["{...}", "{...}"]
+}
+
+Each string in the array should be a JSON object representing a data point.
+For instance:
+{
+    "jsonifiedDatumArray": ["{\\"dim1\\": \\"val1\\", \\"dim2\\": \\"val2\\", \\"dim3\\": \\"val3\\"}", "{\\"dim1\\": \\"val1\\", \\"dim2\\": \\"val2\\", \\"dim3\\": \\"val3\\"}"]
+}
+
+IMPORTANT: Return ONLY the JSON object, no markdown, no explanation, no code blocks.`
+
+    const base64 = img.replace(/^data:image\/\w+;base64,/, "");
     return [{
-        role: "system",
-        content: DATA_SYSTEM_PROMPT
-    },
-    {
-        role: "user",
-        content: [{
-            type: "text",
-            text: prompt,
-        },
-        {
-            type: "image_url",
-            image_url: {
-                url: img,
+        role: "user" as const,
+        content: [
+            {
+                type: "text" as const,
+                text: DATA_SYSTEM_PROMPT + "\n\n" + prompt,
+            },
+            {
+                type: "image" as const,
+                source: {
+                    type: "base64" as const,
+                    media_type: "image/png" as const,
+                    data: base64,
+                },
             }
-        }]
-    }] as ChatCompletionMessageParam[]
+        ]
+    }] as AnthropicMessageParam[]
 }
 
 
-const dataFormat = zodResponseFormat(z.object({
-    jsonifiedDatumArray: z.array(z.string()).describe("data table represented as an array of strings, each string is a JSON object")
-}), "data-table") as unknown as OpenAI.ResponseFormatJSONSchema
+const dataFormat = undefined;
 
 interface LiteralDataFormat {
     jsonifiedDatumArray: string[]
@@ -58,4 +57,3 @@ export {
     type DataFormat,
     type LiteralDataFormat
 }
-

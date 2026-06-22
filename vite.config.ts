@@ -53,6 +53,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src')
     }
   },
+  server: {
+    proxy: {
+      '/api/mimo': {
+        target: 'https://token-plan-cn.xiaomimimo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mimo/, '/anthropic'),
+      }
+    }
+  },
   build: {
     outDir: 'docs'
   }

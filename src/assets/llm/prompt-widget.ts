@@ -1,7 +1,4 @@
-import { ChatCompletion, ChatCompletionMessageParam } from "openai/resources/index.mjs"
-import { z } from "zod"
-import { zodResponseFormat } from "openai/helpers/zod"
-import OpenAI from "openai"
+import { AnthropicMessageParam } from "./index"
 
 const SYSTEM_WIDGET_PROMPT = `You are a skillful data visualization developer. You are given a aesthetic visualization template code and parameters based on d3, its rendered SVG string and corresponding data array. Please update the code and parameters to achieve the user's requirement. You may need to define new parameter.
 `
@@ -41,39 +38,47 @@ ${userPrompt}
 4. Provide a short introduction in the "newParamsIntro" object.
 
 ### Output
-- "response": a natural language response to the user.
-- "code": the updated code to achieve the user's requirement, following the same format as the original code.
-- "newDataJsonStr": the new data to be used in the code, you may need to update the data to achieve the user's requirement. Input the old data if no update is needed.
-- "defaultParamsJsonStr": all the default parameters, including newly included variables.
-- "newParamsIntro": the newly included parameters (ONLY LIST THE NEW ONES)
-  - "key": the name of the parameter
-  - "defaultValue": the default value of the parameter formatted as a string, this can be a list of values separated by commas
-  - "valueType": the type of the parameter, including 'number', 'string', 'Array<string>'
-  - "valueRange": the value range of the parameter, including the minimum and maximum values or categories in the format of an array of strings
-  - "widgetType": recommended widget for user control, including 'slider', 'checkbox', 'select', 'colorpicker', 'input'.
-  - "widgetDescription": a short description of the widget no more than 10 words
-`
+In your response, please return ONLY a valid JSON object with the following structure:
+{
+    "response": "a natural language response to the user regarding the update of the visualization and new widgets. Pay attention to the language used by the user.",
+    "code": "the updated javascript code string to achieve the user's requirement, using the four parameters (data, params, svgId, svgTemplate) as the original code",
+    "defaultParamsJsonStr": "the json string of all default parameters, including newly included variables and the old ones",
+    "newDataJsonStr": "the json string of the new data array, you may need to update the data to achieve the user's requirement. Input the old data if no update is needed.",
+    "newParamsIntro": [
+        {
+            "key": "the name of the parameter",
+            "alias": "a very short self-explanatory name with no more than 3 words (optional)",
+            "defaultValue": "the default value formatted as a string",
+            "valueType": "the type: 'number', 'string', or 'Array<string>'",
+            "valueRange": ["the value range as array of strings"],
+            "widgetType": "recommended widget: 'slider', 'checkbox', 'select', 'colorpicker', 'input'",
+            "widgetDescription": "a short description no more than 10 words"
+        }
+    ]
+}
+
+IMPORTANT: Return ONLY the JSON object, no markdown, no explanation, no code blocks. The "code" field must contain valid JavaScript. Escape all special characters properly in the JSON strings.`
+
+    const base64 = imageData.replace(/^data:image\/\w+;base64,/, "");
     return [{
-        role: 'system',
-        content: SYSTEM_WIDGET_PROMPT
-    },
-    {
-        role: 'user',
+        role: 'user' as const,
         content: [
             {
-                type: 'text',
-                text: prompt
+                type: 'text' as const,
+                text: SYSTEM_WIDGET_PROMPT + "\n\n" + prompt
             },
             {
-                type: 'image_url',
-                image_url: {
-                    url: imageData
-                }
+                type: 'image' as const,
+                source: {
+                    type: 'base64' as const,
+                    media_type: 'image/png' as const,
+                    data: base64,
+                },
             }
         ]
     }
 
-    ] as ChatCompletionMessageParam[]
+    ] as AnthropicMessageParam[]
 }
 
 export interface NewParamProps {
@@ -88,13 +93,13 @@ export interface NewParamProps {
 
 export interface ParsedNewParamProps {
     key: string;
-    defaultValue: string | number; 
+    defaultValue: string | number;
     valueType: string | number | string[] | number[];
     valueRange: string[] | number[];
     widgetType: string;
     widgetDescription: string;
     alias?: string;
-} 
+}
 interface WidgetResult {
     response: string;
     code: string;
@@ -105,23 +110,7 @@ interface WidgetResult {
 
 
 
-const WidgetResultSchema = zodResponseFormat(z.object({
-    response: z.string().describe("a short natural language response to the user regarding the update of the visualization and new widgets. Pay attention to the langauge used by the user."),
-    code: z.string().describe("the updated javascript code string to achieve the user's requirement, using the four parameters (data, params, svgId, svgTemplate) as the original code"),
-    defaultParamsJsonStr: z.string().describe("the default parameters to be used in the code, including newly included variables and the old ones"),
-    newDataJsonStr: z.string().describe("the new data to be used in the code, you may need to update the data to achieve the user's requirement. Input the old data if no update is needed. The type is Array<Record<string, string | number>>"),
-    newParamsIntro: z.array(z.object({
-       key: z.string().describe("the name of the parameter"),
-       alias: z.string().optional().describe("a very short self-explanatory name of the parameter with no more than 3 words"),
-       defaultValue: z.string().describe("the default value of the parameter formatted as a string, this can be a jsonified string for array"),
-       valueType: z.string().describe("the type of the parameter, including 'number', 'string', 'Array<string>'"),
-       valueRange: z.array(z.string()).describe("the value range of the parameter, including the minimum and maximum values or categories in the format of an array of strings"),
-       widgetType: z.string().describe("the recommended widget for user control, including 'slider', 'checkbox', 'select', 'colorpicker', 'input'"),
-       widgetDescription: z.string().describe("a short description of the widget no more than 10 words")
-    })).describe("the newly included parameters, including the default value and value range and recommended widget type")
-}), "widget-result") as unknown as OpenAI.ResponseFormatJSONSchema
-
-   
+const WidgetResultSchema = undefined;
 
 export {
     getWidgetPrompt,

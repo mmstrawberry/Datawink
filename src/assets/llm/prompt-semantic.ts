@@ -2,11 +2,8 @@
  * This module is used to enrich the SVG with semantics in the decorative elements.
  */
 
-import { ChatCompletionMessageParam } from "openai/src/resources/chat/completions/index.js"
+import { AnthropicMessageParam } from "./index"
 import { tidySvgWithHeuristics } from "../svg/svg-processing"
-import { z } from "zod"
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
 
 const SEMANTIC_SYSTEM_PROMPT = `You are a sharp designer that can write meaningful explanations for the given SVG string and format it properly.
 `
@@ -21,37 +18,35 @@ const getSemanticPrompt = (svg: string, img: string) => {
 HERE IS THE SVG STRING:
 ${tidySvg}
 
-In your response, please include the following as a JSON object:
+In your response, please return ONLY a valid JSON object with the following structure:
 {
-    "interpretation": "Your understanding of the visual content in the image."
-    "extendedSvg": "<svg>...</svg>",
-}`
+    "analysis": "Your understanding of the visual content in the image.",
+    "extendedSvg": "<svg>...</svg>"
+}
 
+IMPORTANT: Return ONLY the JSON object, no markdown, no explanation, no code blocks.`
+
+    const base64 = img.replace(/^data:image\/\w+;base64,/, "");
     return [{
-        role: "system",
-        content: SEMANTIC_SYSTEM_PROMPT
-    },
-    {
-        role: "user",
+        role: "user" as const,
         content: [
             {
-                type: "text",
-                text: prompt,
+                type: "text" as const,
+                text: SEMANTIC_SYSTEM_PROMPT + "\n\n" + prompt,
             },
             {
-                type: "image_url",
-                image_url: {
-                    url: img,
+                type: "image" as const,
+                source: {
+                    type: "base64" as const,
+                    media_type: "image/png" as const,
+                    data: base64,
                 },
             }
         ]
-    }] as ChatCompletionMessageParam[]
+    }] as AnthropicMessageParam[]
 }
 
-const semanticFormat = zodResponseFormat(z.object({
-    analysis: z.string(),
-    extendedSvg: z.string(),
-}), "svg-observe") as unknown as OpenAI.ResponseFormatJSONSchema
+const semanticFormat = undefined;
 
 interface SemanticResult {
     analysis: string;

@@ -1,7 +1,4 @@
-import OpenAI from "openai"
-import { zodResponseFormat } from "openai/helpers/zod.mjs"
-import { ChatCompletionMessageParam } from "openai/resources/index.mjs"
-import { z } from "zod"
+import { AnthropicMessageParam } from "./index"
 
 const GENERATOR_SYSTEM_PROMPT = `You are a skillful programmer who may write consistent and readable data visualization templates based on d3 v7.`
 
@@ -19,7 +16,7 @@ This is an example of a barchart with two bars.
   </g>
 </svg>
 
-Suppose the data is known to be 
+Suppose the data is known to be
 \`\`\`
 [
     {
@@ -57,9 +54,9 @@ const visualize = (data, params, svgId, template) => {
     const barsSlot = svg.select('[data-slot="SLOT_2"]') // find the slot for the bars
     barsSlot.selectAll("*").remove()
     barsSlot.selectAll("rect").data(data).enter().append("rect")
-        .attr("x", d => x(d[params.xField]))    
+        .attr("x", d => x(d[params.xField]))
         .attr("y", d => y(d[params.yField]))
-        .attr("width", x.bandwidth())    
+        .attr("width", x.bandwidth())
         .attr("height", d => y(d[params.yField]))
         .attr("fill", d => color(d[params.xField]))
    return svg.documentElement.outerHTML
@@ -86,36 +83,35 @@ ${encodingInfo}
 IN YOUR CODE, YOU MUST USE THE FUNCTION NAME "visualize" AND THE PARAMETERS (data, params, svgId, svgTemplate).
 THE SNIPPET CONTAINS THE JAVASCRIPT FUNCTION ONLY.
 
-IN YOUR RESPONSE, YOU SHOULD PROVIDE THE FOLLOWING THREE FIELDS:
-- "code": the js function NAMED "visualize" with four parameters (data, params, svgId, svgTemplate)
-- "svgTemplate": the FULL SVG template to be manipulated; DO NOT MISS ANYTHING.
-- "defaultParamsJsonStr": a full list of the default parameters in the "params" object, including "xField", "yField", "chartOriginX", "chartOriginY", "chartWidth", "chartHeight", "svgWidth", "svgHeight", "svgViewBox", "coordinateType", "chartType", etc., and value ranges for the visual attributes, according to the encoding scheme.
-`
+In your response, please return ONLY a valid JSON object with the following structure:
+{
+    "code": "the js function NAMED visualize with four parameters (data, params, svgId, svgTemplate)",
+    "svgTemplate": "the FULL SVG template to be manipulated; DO NOT MISS ANYTHING.",
+    "defaultParamsJsonStr": "a json string of the full list of default parameters"
+}
+
+IMPORTANT: Return ONLY the JSON object, no markdown, no explanation, no code blocks. The "code" field must contain valid JavaScript. Escape all special characters properly in the JSON strings.`
+
+    const base64 = img.replace(/^data:image\/\w+;base64,/, "");
     return [{
-        role: "system",
-        content: GENERATOR_SYSTEM_PROMPT
-    },
-    {
-        role: "user",
+        role: "user" as const,
         content: [{
-            type: "text",
-            text: prompt,
+            type: "text" as const,
+            text: GENERATOR_SYSTEM_PROMPT + "\n\n" + prompt,
         },
         {
-            type: "image_url",
-            image_url: {
-                url: img,
-            }
+            type: "image" as const,
+            source: {
+                type: "base64" as const,
+                media_type: "image/png" as const,
+                data: base64,
+            },
         }]
-    }] as ChatCompletionMessageParam[]
+    }] as AnthropicMessageParam[]
 }
 
 
-const generatorFormat = zodResponseFormat(z.object({
-    code: z.string().describe("the js code to generate the visualization with four parameters (data, params, svgId, svgTemplate)"),
-    svgTemplate: z.string().describe("the SVG template to be manipulated"),
-    defaultParamsJsonStr: z.string().describe("the jsonified default parameters for the visualization, such as the xField, yField, colorRanges, etc.")
-}), "code-generator") as unknown as OpenAI.ResponseFormatJSONSchema
+const generatorFormat = undefined;
 
 interface GeneratorResult {
     code: string;

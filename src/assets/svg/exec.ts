@@ -9,7 +9,7 @@ export const exec = (svgTemplate: string, code: string, params: Record<string, a
     const svgRegex = /<svg([\s\S]*?)<\/svg>/;
     const svgMatch = svgTemplate.match(svgRegex);
     if (!svgMatch) return
-    
+
     const svgInnterHTMLRaw = svgMatch[1]
     const idx = svgInnterHTMLRaw.indexOf('>')
     const svgInnterHTML = svgInnterHTMLRaw.substring(idx + 1)
@@ -26,16 +26,37 @@ export const exec = (svgTemplate: string, code: string, params: Record<string, a
 
     const funcBodyRegex = /{([\s\S]*)}/;
     const match = code.match(funcBodyRegex);
-    if (!match) return
+    if (!match) {
+        console.error("exec: could not extract function body from code:", code.substring(0, 200));
+        return;
+    }
     const funcBody = match[1]
     const func = new Function("data", "params", "svgId", "svgTemplate", "d3", funcBody)
-    const funcResult = func(data, params, svgId, '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + svgInnterHTML + '</svg>', d3)
-    const serialized = typeof funcResult === 'string'
-        ? funcResult
-        : new XMLSerializer().serializeToString(funcResult.documentElement)
+    const templateStr = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + svgInnterHTML + '</svg>'
+    const funcResult = func(data, params, svgId, templateStr, d3)
+    console.log("exec: funcResult type:", typeof funcResult, funcResult)
+
+    if (!funcResult) {
+        console.error("exec: visualize function returned undefined/null. Code:", code.substring(0, 300));
+        return;
+    }
+
+    let serialized: string;
+    if (typeof funcResult === 'string') {
+        serialized = funcResult;
+    } else if (funcResult.documentElement) {
+        serialized = new XMLSerializer().serializeToString(funcResult.documentElement);
+    } else if (funcResult instanceof Element || funcResult instanceof Document) {
+        serialized = new XMLSerializer().serializeToString(funcResult);
+    } else {
+        console.error("exec: unexpected return type from visualize:", typeof funcResult);
+        return;
+    }
     const processed = flattenVisLayerGroups(serialized)
     const innerDoc = new DOMParser().parseFromString(processed, 'image/svg+xml')
-    d3.select('#' + svgId).html(innerDoc.documentElement.innerHTML)
-    
+    if (innerDoc.documentElement) {
+        d3.select('#' + svgId).html(innerDoc.documentElement.innerHTML)
+    }
+
     store.ui.setActiveCanvasTab('canvas')
 }

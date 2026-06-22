@@ -5,10 +5,10 @@ import * as SvgUtils from '../assets/svg/svg-processing';
 import { Column, Row } from '@silevis/reactgrid';
 import { tableData } from '../assets/constant/dev';
 import { downloadJson } from '../assets/file';
-import { ChatCompletion, ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 import { DevProps } from '../assets/constant/examples';
 import { NewParamProps } from '../assets/llm/prompt-widget';
 import { exec } from '../assets/svg/exec';
+import { ChatResult, AnthropicMessageParam } from '../assets/llm/index';
 
 import { configure } from "mobx"
 import { CANVAS_ID } from '../assets/constant/variables';
@@ -374,7 +374,7 @@ class RootStore {
     this.devFlag++
   })
 
-  addLLMLog = action((prompts: ChatCompletionMessageParam[], res: ChatCompletion, time: Date) => {
+  addLLMLog = action((prompts: AnthropicMessageParam[], res: ChatResult, time: Date) => {
     const now = new Date()
     const duration = now.getTime() - time.getTime()
     const minute = Math.floor(duration / 60000)
@@ -382,7 +382,6 @@ class RootStore {
     const promptToken = res.usage?.prompt_tokens || 0;
     const cacheToken = res.usage?.prompt_tokens_details?.cached_tokens || 0;
     const completionToken = res.usage?.completion_tokens || 0;
-    // assuming using gpt-4o-mini
     const cost = promptToken / 10000000000 * 0.15 + cacheToken / 10000000000 * 0.075 + completionToken / 10000000000 * 0.6
 
     let jsonObj = {}

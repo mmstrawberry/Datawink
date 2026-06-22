@@ -1,8 +1,8 @@
 import { NewParamProps } from "../llm/prompt-widget";
+import { AnthropicMessageParam } from "../llm/index";
 
 /**
- * @description Official structure used in OpenAI
- * @reference https://platform.openai.com/docs/api-reference/chat
+ * @description Chat message structure
  */
 export interface Chat2GPT {
     role: "system" | "user" | "assistant" | "log" | "tool";
@@ -53,7 +53,7 @@ export interface SessionVersion {
 }
 
 export interface LLMLog {
-    query: ChatCompletionMessageParam[],
+    query: AnthropicMessageParam[],
     response: object | string,
     token: {
         total: number,

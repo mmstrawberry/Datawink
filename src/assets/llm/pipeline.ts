@@ -1,8 +1,7 @@
-import { ChatCompletion } from 'openai/resources/index.mjs';
 import store from '../../store'
 import { getRenderedSvg, reverseSvg } from '../svg/svg-processing';
 import { getObservePrompt, observeFormat, ObserveResult } from './prompt-observe';
-import getChatCompletion from '.';
+import getChatCompletion, { ChatResult } from './index';
 import { generatorFormat, GeneratorResult, getGeneratorPrompt } from './prompt-generator';
 import { DataFormat, dataFormat, getDataTablePrompt, LiteralDataFormat } from './prompt-data';
 import { getSemanticPrompt, semanticFormat, SemanticResult } from './prompt-semantic';
@@ -43,6 +42,50 @@ const parseInferredDataRows = (jsonifiedDatumArray: unknown): Record<string, num
 };
 
 
+// 清理 code 字段中可能的 markdown 代码块包裹
+const cleanCodeString = (code: string): string => {
+    if (!code) return code;
+    let cleaned = code.trim();
+    // Remove ```javascript ... ``` or ```js ... ``` wrapping
+    const fenced = cleaned.match(/^```(?:javascript|js)?\s*\n?([\s\S]*?)\n?```$/);
+    if (fenced) {
+        cleaned = fenced[1].trim();
+    }
+    // Ensure the code contains a function body
+    if (!cleaned.includes('{') || !cleaned.includes('}')) {
+        console.warn("cleanCodeString: code may not be valid JavaScript:", cleaned.substring(0, 200));
+    }
+    return cleaned;
+};
+
+// 从 LLM 响应中提取 JSON 对象（处理可能的 markdown 包裹）
+const extractJsonFromResponse = (content: string): any => {
+    // 尝试直接解析
+    try {
+        return JSON.parse(content);
+    } catch { }
+
+    // 尝试提取 ```json ... ``` 块
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+        try {
+            return JSON.parse(jsonMatch[1].trim());
+        } catch { }
+    }
+
+    // 尝试找到第一个 { 和最后一个 }
+    const firstBrace = content.indexOf('{');
+    const lastBrace = content.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+        try {
+            return JSON.parse(content.substring(firstBrace, lastBrace + 1));
+        } catch { }
+    }
+
+    throw new Error("Failed to extract JSON from response: " + content.substring(0, 200));
+};
+
+
 const runReverseEngineering = async (needLog: boolean = false) => {
 
     const apiKey = store.apiKey;
@@ -58,11 +101,11 @@ const runReverseEngineering = async (needLog: boolean = false) => {
     const obsTime = new Date();
     console.log('observe prompts', observePrompts)
     const obsJsonObj = await getChatCompletion(observePrompts, apiKey, observeFormat)
-        .then((res: ChatCompletion) => {
+        .then((res: ChatResult) => {
             store.addLLMLog(observePrompts, res, obsTime);
             const jsonStr = res.choices[0].message.content || "";
             try {
-            const jsonObj = JSON.parse(jsonStr) as ObserveResult;
+            const jsonObj = extractJsonFromResponse(jsonStr) as ObserveResult;
             return jsonObj;
             } catch (err) {
                 console.error("Error parsing JSON:", err);
@@ -84,10 +127,10 @@ const runReverseEngineering = async (needLog: boolean = false) => {
     const semanticPrompts = getSemanticPrompt(obsJsonObj.layeredSvg, imageData);
     const semanticTime = new Date();
     const semanticJsonObj = await getChatCompletion(semanticPrompts, apiKey, semanticFormat)
-      .then((res: ChatCompletion) => {
+      .then((res: ChatResult) => {
         store.addLLMLog(semanticPrompts, res, semanticTime);
         const jsonStr = res.choices[0].message.content || "";
-        const jsonObj = JSON.parse(jsonStr) as SemanticResult
+        const jsonObj = extractJsonFromResponse(jsonStr) as SemanticResult
         return jsonObj;
       }).catch((err) => {
         console.error(err);
@@ -101,12 +144,12 @@ const runReverseEngineering = async (needLog: boolean = false) => {
     const dataPrompt = getDataTablePrompt(semanticSvg, imageData);
     const dataTime = new Date();
     const dataJsonObj = await getChatCompletion(dataPrompt, apiKey, dataFormat)
-        .then((res: ChatCompletion) => {
+        .then((res: ChatResult) => {
             store.addLLMLog(dataPrompt, res, dataTime);
             const jsonStr = res.choices[0].message.content || "";
             try{
-                const jsonObj = JSON.parse(jsonStr) as LiteralDataFormat;
-                return jsonObj; 
+                const jsonObj = extractJsonFromResponse(jsonStr) as LiteralDataFormat;
+                return jsonObj;
             } catch (error) {
                 console.error("Error parsing JSON:", error);
                 store.ui.notify("Error: " + error.message);
@@ -131,16 +174,16 @@ const runReverseEngineering = async (needLog: boolean = false) => {
         return;
     }
     store.updateInferredTableData(inferredData)
-    const inferredDataStr = JSON.stringify(inferredData) 
-        
+    const inferredDataStr = JSON.stringify(inferredData)
+
     const schemaPrompt = getSchemaPrompt(layeredSvg, imageData, inferredDataStr);
     const schemaTime = new Date();
     const schemaJsonObj = await getChatCompletion(schemaPrompt, apiKey, schemaFormat)
-        .then((res: ChatCompletion) => {
+        .then((res: ChatResult) => {
             store.addLLMLog(schemaPrompt, res, schemaTime);
             const jsonStr = res.choices[0].message.content || "";
             try {
-                const jsonObj = JSON.parse(jsonStr) as SchemaResult;
+                const jsonObj = extractJsonFromResponse(jsonStr) as SchemaResult;
                 return jsonObj;
             } catch (error) {
                 console.error("Error parsing JSON:", error);
@@ -156,11 +199,11 @@ const runReverseEngineering = async (needLog: boolean = false) => {
     const generatorPrompt = getGeneratorPrompt(layeredSvg, inferredData, JSON.stringify(schemaJsonObj), imageData);
     const generatorTime = new Date();
     const generatorJsonObj = await getChatCompletion(generatorPrompt, apiKey, generatorFormat)
-        .then((res: ChatCompletion) => {
+        .then((res: ChatResult) => {
             store.addLLMLog(generatorPrompt, res, generatorTime);
             const jsonStr = res.choices[0].message.content || "";
             try {
-                const jsonObj = JSON.parse(jsonStr) as GeneratorResult;
+                const jsonObj = extractJsonFromResponse(jsonStr) as GeneratorResult;
                 return jsonObj;
             } catch (error) {
                 console.error("Error parsing JSON:", error);
@@ -168,10 +211,10 @@ const runReverseEngineering = async (needLog: boolean = false) => {
             }
         })
     console.log(generatorJsonObj)
-    store.data.setCode(generatorJsonObj.code)
+    store.data.setCode(cleanCodeString(generatorJsonObj.code))
     // update the svg template
     store.data.setParams(JSON.parse(generatorJsonObj.defaultParamsJsonStr))
-  
+
 
     if (!needLog) return
     const logStr = `${generatorJsonObj.code}
@@ -191,25 +234,26 @@ const synthesizeWidget = async (usrPrompt: string, svgString: string, needLog: b
     const params = store.data.params
     const schema = store.data.schema
     const data = store.data.tableData
-    const prompt = getWidgetPrompt(code, svgString, data, params, schema, usrPrompt, imageData)
+    const layeredSvg = store.data.layeredSvgString
+    const prompt = getWidgetPrompt(code, layeredSvg, data, params, schema, usrPrompt, imageData)
     const apiKey = store.apiKey
     console.log('send request to update the widget', svgString.length)
-    
+
     const widgetJsonObj = await getChatCompletion(prompt, apiKey, WidgetResultSchema).then((res)=>{
         store.addLLMLog(prompt, res, new Date())
         const jsonStr = res.choices[0].message.content || ""
-        const jsonObj = JSON.parse(jsonStr) as WidgetResult;
+        const jsonObj = extractJsonFromResponse(jsonStr) as WidgetResult;
         return jsonObj;
     })
     console.log(widgetJsonObj)
-    store.data.setCode(widgetJsonObj.code)
+    store.data.setCode(cleanCodeString(widgetJsonObj.code))
     store.data.setParams(JSON.parse(widgetJsonObj.defaultParamsJsonStr))
     store.data.addNewParams(widgetJsonObj.newParamsIntro)
     const newData = JSON.parse(widgetJsonObj.newDataJsonStr)
     store.updateLastLLMMsg(widgetJsonObj.response)
     store.updateInferredTableData(newData)
     store.ui.setIsQuerying(false)
-    
+
     if (!needLog) return
     const logStr = `
 ${widgetJsonObj.response}
